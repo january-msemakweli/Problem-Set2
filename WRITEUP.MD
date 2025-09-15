@@ -65,20 +65,33 @@ pr_died_given_placebo <- CT["Placebo", "Died"] / sum(CT["Placebo", ])
 
 ## ii.b) Bayes' Theorem Calculation
 
-### Hand Calculation:
-Using Bayes' Theorem: **Pr(VitA | Died) = [Pr(Died | VitA) × Pr(VitA)] / Pr(Died)**
+### Hand Calculation using the formula shown:
 
-**Step-by-step calculation:**
-- Numerator: Pr(Died | VitA) × Pr(VitA) = 0.0170 × 0.5063 = 0.0086
-- Denominator: Pr(Died) = 0.0193
-- Result: Pr(VitA | Died) = 0.0086 / 0.0193 = **0.4455**
+**Pr(VitA | Died) = Pr(VitA and Died) / Pr(Died) = [Pr(Died | VitA) × Pr(VitA)] / Pr(Died)**
 
-### Alternative calculation using law of total probability:
-Pr(Died) = Pr(Died | VitA) × Pr(VitA) + Pr(Died | Placebo) × Pr(Placebo)
-Pr(Died) = 0.0170 × 0.5063 + 0.0217 × 0.4937 = 0.0086 + 0.0107 = 0.0193 ✓
+**Using the expanded denominator:**
+**Pr(VitA | Died) = [Pr(Died | VitA) × Pr(VitA)] / [Pr(Died | VitA) × Pr(VitA) + Pr(Died | Placebo) × Pr(Placebo)]**
+
+**Step-by-step calculation with observed rates:**
+- Pr(Died | VitA) = 0.0170
+- Pr(VitA) = 0.5063
+- Pr(Died | Placebo) = 0.0217
+- Pr(Placebo) = 0.4937
+
+**Numerator:**
+Pr(Died | VitA) × Pr(VitA) = 0.0170 × 0.5063 = 0.008607
+
+**Denominator:**
+Pr(Died | VitA) × Pr(VitA) + Pr(Died | Placebo) × Pr(Placebo)
+= 0.0170 × 0.5063 + 0.0217 × 0.4937
+= 0.008607 + 0.010713
+= 0.019320
+
+**Result:**
+Pr(VitA | Died) = 0.008607 / 0.019320 = **0.4455**
 
 ### Interpretation:
-The probability that a child who died received Vitamin A is 0.4455 (44.55%).
+The probability that a child who died received Vitamin A is 0.4455 (44.55%). This is less than 50%, reflecting that vitamin A reduces mortality risk.
 
 ---
 
