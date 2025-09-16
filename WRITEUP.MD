@@ -135,58 +135,49 @@ Vitamin A supplementation reduced mortality in both sexes, with a greater effect
 
 ---
 
-## iv. Evidence Relevant to Null Hypotheses
+## iv. Evidence Relevant to Null Hypothesis (Logistic Regression)
+
+### R Code:
+```r
+# Logistic regression for overall treatment effect
+model1 <- glm(status == "Died" ~ trt, data = nepal621, family = binomial)
+summary(model1)
+
+# Logistic regression with interaction term for effect modification
+model2 <- glm(status == "Died" ~ trt * sex, data = nepal621, family = binomial)
+summary(model2)
+```
 
 ### Hypothesis 1: Overall Treatment Effect
-```
-          Alive  Died   Sum
-  Placebo 13099   290 13389
-  Vit A   13499   233 13732
-  Sum     26598   523 27121
-```
 
-### Hypothesis 2: Treatment Effect Same for Both Sexes
+**Table: Logistic Regression Results - Overall Treatment Effect**
 
-**Males:**
-```
-          Alive  Died   Sum
-  Placebo  6723   124  6847
-  Vit A    6955   112  7067
-  Sum     13678   236 13914
-```
+| Category | Reference | OR | 95% CI Lower | 95% CI Upper | p-value |
+|----------|-----------|----|--------------|--------------|---------| 
+| Intercept (Placebo) | - | 0.022 | 0.020 | 0.025 | 0.0000 |
+| Treatment (Vit A vs Placebo) | Placebo | **0.780** | **0.655** | **0.928** | **0.0051** |
 
-**Females:**
-```
-          Alive  Died   Sum
-  Placebo  6376   166  6542
-  Vit A    6544   121  6665
-  Sum     12920   287 13207
-```
+### Hypothesis 2: Treatment Effect Modification by Sex
 
-**Treatment Effects:**
-- Risk difference in males: 0.0023
-- Risk difference in females: 0.0072
-- Odds ratio in males: 1.145
-- Odds ratio in females: 1.408
+**Table: Logistic Regression Results - Treatment Effect Modification**
 
-### Statistical Tests
+| Category | Reference | OR | 95% CI Lower | 95% CI Upper | p-value |
+|----------|-----------|----|--------------|--------------|---------| 
+| Intercept (Placebo, Male) | - | 0.026 | 0.022 | 0.030 | 0.0000 |
+| Treatment (Vit A vs Placebo) | Placebo | 0.710 | 0.560 | 0.900 | 0.0046 |
+| Sex (Female vs Male) | Male | 0.708 | 0.560 | 0.896 | 0.0041 |
+| Interaction (Vit A × Female) | - | **1.229** | **0.866** | **1.745** | **0.2475** |
 
-**R Code:**
-```r
-chi1 <- chisq.test(CT)                              # H1: Overall effect
-mh_test <- mantelhaen.test(stratified_tables)       # H2: Homogeneity test
-```
+### Summary of Hypothesis Tests
 
-### Summary of Evidence
+| Hypothesis | Test | p-value | Conclusion |
+|------------|------|---------|------------|
+| H₁: No treatment effect | Treatment coefficient | **0.0051** | **Reject H₀** |
+| H₂: No effect modification by sex | Interaction coefficient | **0.2475** | **Fail to reject H₀** |
 
-| Hypothesis | Test | Chi-square | p-value | Conclusion |
-|------------|------|------------|---------|------------|
-| H₁: No treatment effect | Chi-square | 7.645 | **0.0057** | **Reject H₀** |
-| H₂: Same effect in both sexes | Mantel-Haenszel | 7.595 | **0.0059** | **Reject H₀** |
-
-### Conclusions
-1. **Hypothesis 1:** Vitamin A significantly reduces mortality overall (p = 0.0057)
-2. **Hypothesis 2:** Treatment effect differs significantly by sex (p = 0.0059) - effect modification exists
+### Interpretation
+- **Hypothesis 1:** Vitamin A significantly reduces mortality (OR = 0.780, p = 0.0051) - 22% reduction in odds of death compared to placebo.
+- **Hypothesis 2:** No significant effect modification by sex (interaction p = 0.2475) - treatment effect is similar for males and females.
 
 ---
 

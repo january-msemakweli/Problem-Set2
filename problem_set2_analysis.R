@@ -119,7 +119,7 @@ cat("Treatment effect in females:", round(effect_female, 4), "\n")
 cat("Difference in treatment effects:", round(effect_difference, 4), "\n\n")
 
 # ===============================================================================
-# iv. Evidence Relevant to Null Hypotheses
+# iv. Evidence Relevant to Null Hypotheses (Logistic Regression)
 # ===============================================================================
 cat("iv. Evidence Relevant to Null Hypotheses\n")
 cat("=========================================\n")
@@ -127,96 +127,81 @@ cat("=========================================\n")
 # Hypothesis 1: Overall Treatment Effect
 cat("Hypothesis 1: Overall Treatment Effect\n")
 cat("--------------------------------------\n")
-print(addmargins(CT))
-chi1 <- chisq.test(CT)
-cat("Chi-square =", round(chi1$statistic, 3), ", p-value =", round(chi1$p.value, 4), "\n\n")
+model1 <- glm(status == "Died" ~ trt, data = nepal621, family = binomial)
+summary1 <- summary(model1)
 
-# Hypothesis 2: Treatment Effect Same for Both Sexes
-cat("Hypothesis 2: Treatment Effect Same for Both Sexes\n")
-cat("--------------------------------------------------\n")
+# Extract results for table
+coef1 <- summary1$coefficients
+or1 <- exp(coef1[, "Estimate"])
+ci_lower1 <- exp(coef1[, "Estimate"] - 1.96 * coef1[, "Std. Error"])
+ci_upper1 <- exp(coef1[, "Estimate"] + 1.96 * coef1[, "Std. Error"])
 
-# Create 3-way table: Treatment x Sex x Status
-# This tests if treatment effect differs by sex
-three_way_table <- table(
-  Treatment = c(rep("Placebo", nrow(nepal_plac)), rep("Vit A", nrow(nepal_vit))),
-  Sex = c(nepal_plac$sex, nepal_vit$sex),
-  Status = c(nepal_plac$status, nepal_vit$status)
+table1 <- data.frame(
+  Category = c("Intercept (Placebo)", "Treatment (Vit A vs Placebo)"),
+  Reference = c("-", "Placebo"),
+  OR = round(or1, 3),
+  CI_95_Lower = round(ci_lower1, 3),
+  CI_95_Upper = round(ci_upper1, 3),
+  p_value = round(coef1[, "Pr(>|z|)"], 4)
 )
 
-# Show the stratified tables for reference
-cat("Males:\n")
-CT_males <- table(
-  c(rep("Placebo", sum(CT_plac["Male", ])), rep("Vit A", sum(CT_vit["Male", ]))),
-  c(rep(c("Alive", "Died"), c(CT_plac["Male", "Alive"], CT_plac["Male", "Died"])),
-    rep(c("Alive", "Died"), c(CT_vit["Male", "Alive"], CT_vit["Male", "Died"])))
-)
-colnames(CT_males) <- c("Alive", "Died")
-print(addmargins(CT_males))
+cat("Logistic Regression Results - Hypothesis 1:\n")
+print(table1)
+cat("\n")
 
-cat("\nFemales:\n")
-CT_females <- table(
-  c(rep("Placebo", sum(CT_plac["Female", ])), rep("Vit A", sum(CT_vit["Female", ]))),
-  c(rep(c("Alive", "Died"), c(CT_plac["Female", "Alive"], CT_plac["Female", "Died"])),
-    rep(c("Alive", "Died"), c(CT_vit["Female", "Alive"], CT_vit["Female", "Died"])))
-)
-colnames(CT_females) <- c("Alive", "Died")
-print(addmargins(CT_females))
+# Summary of Hypothesis Test
+cat("Summary of Hypothesis Test\n")
+cat("==========================\n")
+h1_p <- coef1["trtVit A", "Pr(>|z|)"]
 
-# Test for interaction: Does treatment effect differ by sex?
-cat("\nTest for interaction (treatment effect differs by sex):\n")
-
-# Create a combined 2x2x2 table: Treatment x Sex x Outcome
-# We can use Breslow-Day test or chi-square test for homogeneity
-
-# Calculate treatment effects in each stratum
-risk_diff_males <- (CT_males["Placebo", "Died"]/sum(CT_males["Placebo", ])) - 
-                   (CT_males["Vit A", "Died"]/sum(CT_males["Vit A", ]))
-risk_diff_females <- (CT_females["Placebo", "Died"]/sum(CT_females["Placebo", ])) - 
-                     (CT_females["Vit A", "Died"]/sum(CT_females["Vit A", ]))
-
-cat("Risk difference in males:", round(risk_diff_males, 4), "\n")
-cat("Risk difference in females:", round(risk_diff_females, 4), "\n")
-
-# Simple chi-square test for homogeneity using Breslow-Day approximation
-# Test if the odds ratios are the same in both strata
-
-# Calculate odds ratios
-or_males <- (CT_males["Placebo", "Died"] * CT_males["Vit A", "Alive"]) / 
-            (CT_males["Placebo", "Alive"] * CT_males["Vit A", "Died"])
-or_females <- (CT_females["Placebo", "Died"] * CT_females["Vit A", "Alive"]) / 
-              (CT_females["Placebo", "Alive"] * CT_females["Vit A", "Died"])
-
-cat("Odds ratio in males:", round(or_males, 3), "\n")
-cat("Odds ratio in females:", round(or_females, 3), "\n")
-
-# Mantel-Haenszel test for homogeneity (simplified)
-# Using the mantelhaen.test function
-mh_test <- mantelhaen.test(array(c(
-  CT_males["Placebo", "Died"], CT_males["Placebo", "Alive"],
-  CT_males["Vit A", "Died"], CT_males["Vit A", "Alive"],
-  CT_females["Placebo", "Died"], CT_females["Placebo", "Alive"],
-  CT_females["Vit A", "Died"], CT_females["Vit A", "Alive"]
-), dim = c(2, 2, 2)))
-
-cat("Mantel-Haenszel test for homogeneity:\n")
-cat("Chi-square =", round(mh_test$statistic, 3), ", p-value =", round(mh_test$p.value, 4), "\n\n")
-
-interaction_p <- mh_test$p.value
-
-# Summary Table
-cat("Summary of Evidence\n")
-cat("===================\n")
 summary_table <- data.frame(
-  Hypothesis = c("H1: No treatment effect", "H2: Same effect in both sexes"),
-  Test_Statistic = c(paste("Chi-sq =", round(chi1$statistic, 3)), 
-                    paste("Chi-sq =", round(mh_test$statistic, 3))),
-  p_value = c(round(chi1$p.value, 4), round(interaction_p, 4)),
-  Conclusion = c(
-    ifelse(chi1$p.value < 0.05, "Reject H0", "Fail to reject"),
-    ifelse(interaction_p < 0.05, "Reject H0", "Fail to reject")
-  )
+  Hypothesis = "H1: No treatment effect",
+  Test = "Treatment coefficient",
+  p_value = round(h1_p, 4),
+  Conclusion = ifelse(h1_p < 0.05, "Reject H0", "Fail to reject")
 )
 print(summary_table)
+
+cat("\n")
+
+# Hypothesis 2: Treatment Effect Modification by Sex
+cat("Hypothesis 2: Treatment Effect Modification by Sex\n")
+cat("--------------------------------------------------\n")
+model2 <- glm(status == "Died" ~ trt * sex, data = nepal621, family = binomial)
+summary2 <- summary(model2)
+
+# Extract results for table
+coef2 <- summary2$coefficients
+or2 <- exp(coef2[, "Estimate"])
+ci_lower2 <- exp(coef2[, "Estimate"] - 1.96 * coef2[, "Std. Error"])
+ci_upper2 <- exp(coef2[, "Estimate"] + 1.96 * coef2[, "Std. Error"])
+
+table2 <- data.frame(
+  Category = c("Intercept (Placebo, Male)", "Treatment (Vit A vs Placebo)", 
+               "Sex (Female vs Male)", "Interaction (Vit A × Female)"),
+  Reference = c("-", "Placebo", "Male", "-"),
+  OR = round(or2, 3),
+  CI_95_Lower = round(ci_lower2, 3),
+  CI_95_Upper = round(ci_upper2, 3),
+  p_value = round(coef2[, "Pr(>|z|)"], 4)
+)
+
+cat("Logistic Regression Results - Hypothesis 2 (with interaction):\n")
+print(table2)
+cat("\n")
+
+# Summary of Hypothesis Test for interaction
+cat("Summary of Hypothesis Test for Interaction\n")
+cat("==========================================\n")
+h2_p <- coef2["trtVit A:sexMale", "Pr(>|z|)"]
+
+summary_table2 <- data.frame(
+  Hypothesis = "H2: No treatment effect modification by sex",
+  Test = "Interaction coefficient (trt × sex)",
+  p_value = round(h2_p, 4),
+  Conclusion = ifelse(h2_p < 0.05, "Reject H0", "Fail to reject")
+)
+print(summary_table2)
 
 cat("\n")
 
